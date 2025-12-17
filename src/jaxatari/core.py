@@ -35,6 +35,7 @@ GAME_MODULES = {
     "pong": "jaxatari.games.jax_pong",
     "riverraid": "jaxatari.games.jax_riverraid",
     "seaquest": "jaxatari.games.jax_seaquest",
+    "superman": "jaxatari.games.jax_superman",
     "sir_lancelot": "jaxatari.games.jax_sir_lancelot",
     "skiing": "jaxatari.games.jax_skiing",
     "slotmachine": "jaxatari.games.jax_slotmachine",
