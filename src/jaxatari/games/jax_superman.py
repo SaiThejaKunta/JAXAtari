@@ -116,9 +116,8 @@ def _action_to_motion(action: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray, jn
 class JaxSuperman(JaxEnvironment):
     
     def __init__(self, consts: SupermanConstants = None):
-        self.consts = consts or SupermanConstants()
-        # renderer will be added later (self.renderer = ...)
-        super().__init__()
+        consts = consts or SupermanConstants()
+        super().__init__(consts)
         self.renderer = SupermanRenderer(self.consts)
         self.action_set = list(range(18))
     
