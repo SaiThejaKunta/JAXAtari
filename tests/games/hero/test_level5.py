@@ -188,8 +188,12 @@ def test_room_1_is_sealed_and_has_no_blastable_floor():
 
 
 def test_the_side_exits_are_the_open_corridor_edges():
-    assert HL.SIDE_EXITS[L - 1] == [(1, -1), (2, 1)]
-    for room, side in HL.SIDE_EXITS[L - 1]:
+    # (room, side, delta): room 1's LEFT edge goes DOWN the chain (+1) and
+    # room 2's RIGHT edge comes back UP it (-1). Which edge descends is a
+    # property of the room - level 7 descends through a RIGHT edge - so the
+    # direction is carried as data rather than derived from the side.
+    assert HL.SIDE_EXITS[L - 1] == [(1, -1, 1), (2, 1, -1)]
+    for room, side, _delta in HL.SIDE_EXITS[L - 1]:
         cell = 0 if side < 0 else 37
         assert BANDS[room]["B"][cell] == ".", \
             "a side exit is an open corridor cell at the edge of the screen"
@@ -197,7 +201,8 @@ def test_the_side_exits_are_the_open_corridor_edges():
     for room, band in enumerate(BANDS):
         for cell, side in ((0, -1), (37, 1)):
             if band["B"][cell] == ".":
-                assert (room, side) in HL.SIDE_EXITS[L - 1]
+                assert room in {r for r, sd, _d in HL.SIDE_EXITS[L - 1]
+                                if sd == side}
 
 
 def test_walking_off_room_1s_left_edge_enters_room_2(env):
@@ -256,7 +261,7 @@ def test_a_room_without_an_open_edge_keeps_him_in(env):
 def test_every_room_but_the_last_has_a_way_on():
     """A hole in the floor, or an open side edge. Room 1 has only the second
     kind, which is why the level used to be unfinishable here."""
-    sides = {room for room, _side in HL.SIDE_EXITS[L - 1]}
+    sides = {room for room, _side, _delta in HL.SIDE_EXITS[L - 1]}
     for room in range(7):
         has_hole = "." in BANDS[room]["C"]
         assert has_hole or room in sides, f"room {room} has no way on"
@@ -336,13 +341,27 @@ def test_the_four_lanterns_hang_in_the_ceilings_of_rooms_1_3_5_and_6():
 
 def test_the_seven_creatures_are_where_the_rom_draws_them():
     """Four bats, two still spiders and a snake. A bat's x is the CENTRE of
-    its sweep, so it is the measured left column plus the half-travel."""
+    its sweep, so it is the measured left column plus the half-travel.
+
+    The untethered spider (kind 4) is the ROM's OTHER spider: no thread, seven
+    rows of warm body on their own, flipping between two poses. It was drawn
+    with a hanging spider's thread until its sprite was read off the ROM
+    (level_images/tools/creature_atlas.py, 2026-09-23). Its second pose is
+    drawn two rows below its first, so its measured BOX is 9 px taller than
+    the sprite while the creature itself travels 7 - the art carries the
+    other two.
+
+    Room 6's is one of those, and a STILL one: the ROM draws it as a single
+    bitmap for 140 consecutive frames.
+    """
     assert HL.SPIDERS[L - 1] == [(1, 31, 64, 11, 1), (2, 76, 71, 0, 0),
                                  (2, 103, 104, 11, 1), (4, 31, 64, 11, 1),
-                                 (4, 128, 111, 0, 3), (6, 112, 111, 0, 0),
+                                 (4, 128, 111, 0, 3), (6, 112, 111, 0, 4),
                                  (7, 87, 65, 11, 1)]
     kinds = [k for *_r, k in HL.SPIDERS[L - 1]]
-    assert kinds.count(0) == 2 and kinds.count(1) == 4 and kinds.count(3) == 1
+    assert (kinds.count(0), kinds.count(4),
+            kinds.count(1), kinds.count(3)) == (1, 1, 4, 1), (
+        "one hanging spider, one untethered, four bats and a snake")
 
 
 def test_no_creature_of_this_level_falls_back_to_an_archetype():
